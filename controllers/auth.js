@@ -26,38 +26,29 @@ export const register=async (req,res)=>{
     }
 }
 
-export const login= async(req,res)=>{
-    //check existing user
-    const q = "SELECT * FROM users WHERE username = ?";
+export const login = async (req, res) => {
+  const q = "SELECT * FROM users WHERE username = ?";
+  try {
+    const user = await req.db.get(q, [req.body.username]);
+    if (!user) return res.status(404).json("User not found!");
 
-    try {
-        // db comes from your middleware (req.db)
-        const user = await req.db.get(q, [req.body.username]);
-        
-        
-        if (!user) {
-            return res.status(404).json("User not found!");
-        }
-        //check password 
-        const isPasswordMatched=await bcrypt.compare(req.body.password,user.password);
+    const isPasswordMatched = await bcrypt.compare(req.body.password, user.password);
+    if (!isPasswordMatched) return res.status(400).json("Wrong username or password");
 
-        // user exists, do something
-        if(!isPasswordMatched){
-            return res.status(400).json("Wrong username or password");
-        }
-        const {password,...other}=user;
-        const payload={id:user.id}
-        const jwtToken=jwt.sign(payload,JWT_SECRET)
-        res.cookie("access_token",jwtToken,{
-            httpOnly:true
-        }).status(200).json(other)
+    const { password, ...other } = user;
+    const jwtToken = jwt.sign({ id: user.id }, JWT_SECRET);
 
-    } 
-    catch (err) {
-        res.status(500).json(err.message);
-    }
-   
-}
+    res.cookie("access_token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // true on HTTPS in production
+      sameSite: "none", // required for cross-site cookies
+      maxAge: 24 * 60 * 60 * 1000, // optional: 1 day
+    }).status(200).json(other);
+
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+};
 
 export const logout = (req, res) => {
   res.clearCookie("access_token", {
