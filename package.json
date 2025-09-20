@@ -5,8 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js"
-  },
+  "start": "node index.js",
+  "postinstall": "npm rebuild sqlite3 --build-from-source"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
