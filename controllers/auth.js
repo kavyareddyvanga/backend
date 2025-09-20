@@ -40,7 +40,7 @@ export const login = async (req, res) => {
 
     res.cookie("access_token", jwtToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // true on HTTPS in production
+      secure: true, // true on HTTPS in production
       sameSite: "none", // required for cross-site cookies
       maxAge: 24 * 60 * 60 * 1000, // optional: 1 day
     }).status(200).json(other);
