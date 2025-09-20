@@ -39,12 +39,10 @@ export const addPost = async (req, res) => {
   jwt.verify(token, JWT_SECRET, async (err, userInfo) => {
     if (err) return res.status(403).json("Token is not valid!");
 
-    const { title, desc, img, cat } = req.body; // don't take uid from body
+    const { title, desc, img, cat } = req.body; // img = Cloudinary URL
     const date = new Date().toISOString();
 
-    const q = `
-      INSERT INTO posts (title, desc, img, date, uid, cat)
-      VALUES (?, ?, ?, ?, ?, ?)`;
+    const q = `INSERT INTO posts (title, desc, img, date, uid, cat) VALUES (?, ?, ?, ?, ?, ?)`;
 
     try {
       const result = await req.db.run(q, [title, desc, img, date, userInfo.id, cat]);
@@ -87,26 +85,23 @@ export const updatePost = async (req, res) => {
     if (err) return res.status(403).json("Token is not valid!");
 
     const postId = req.params.id;
-    const { title, desc, img, cat } = req.body;
+    const { title, desc, img, cat } = req.body; // img = Cloudinary URL
 
     try {
-      // Fetch existing post
-      const existingPost = await req.db.get("SELECT * FROM posts WHERE id = ? AND uid = ?", [postId, userInfo.id]);
+      const existingPost = await req.db.get(
+        "SELECT * FROM posts WHERE id = ? AND uid = ?",
+        [postId, userInfo.id]
+      );
       if (!existingPost) return res.status(403).json("You can update only your post!");
 
-      // Use existing values if request fields are empty/null
       const updatedTitle = title || existingPost.title;
       const updatedDesc = desc || existingPost.desc;
-      const updatedImg = img || existingPost.img;
+      const updatedImg = img || existingPost.img; // <-- store Cloudinary URL
       const updatedCat = cat || existingPost.cat;
 
-      const q = `
-        UPDATE posts
-        SET title = ?, desc = ?, img = ?, cat = ?
-        WHERE id = ? AND uid = ?`;
+      const q = `UPDATE posts SET title = ?, desc = ?, img = ?, cat = ? WHERE id = ? AND uid = ?`;
 
       await req.db.run(q, [updatedTitle, updatedDesc, updatedImg, updatedCat, postId, userInfo.id]);
-
       res.status(200).json({ message: "Post updated successfully" });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -114,25 +109,24 @@ export const updatePost = async (req, res) => {
   });
 };
 
-// GET all posts of the logged-in user
 export const getUserPosts = async (req, res) => {
-  const token = req.cookies.access_token;
-  if (!token) return res.status(401).json("Not authenticated!");
+  try {
+    const userId = req.user.id;
+    console.log("Fetching posts for user ID:", userId);
 
-  jwt.verify(token, JWT_SECRET, async (err, userInfo) => {
-    if (err) return res.status(403).json("Token is not valid!");
+    const query = `
+      SELECT p.id, u.username, p.title, p.desc, p.img, p.cat, p.date 
+      FROM posts p
+      JOIN users u ON u.id = p.uid
+      WHERE p.uid = ?`;
 
-    try {
-      const q = `
-        SELECT p.id, u.username, p.title, p.desc, p.img, p.cat, p.date 
-        FROM posts p
-        JOIN users u ON u.id = p.uid
-        WHERE p.uid = ?`;
-      const posts = await req.db.all(q, [userInfo.id]);
+    const posts = await req.db.all(query, [userId]);
+    console.log("User posts:", posts);
 
-      res.status(200).json(posts);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+    res.status(200).json(posts);
+  } catch (err) {
+    console.error("Error fetching user posts:", err);
+    res.status(500).json({ error: err.message });
+  }
 };
+
