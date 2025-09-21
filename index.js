@@ -18,7 +18,7 @@ app.use(cookieParser());
 
 // ------------------- CORS -------------------
 const allowedOrigins = [
-  "http://localhost:3001", // dev frontend
+  "http://localhost:3001", // If testing locally, change it to something like http://localhost:3000/ where your frontend will be running
   "https://mitt-arv-blog-frontend.vercel.app", // deployed frontend
 ];
 
