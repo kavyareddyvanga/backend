@@ -40,8 +40,8 @@ export const login = async (req, res) => {
 
     res.cookie("access_token", jwtToken, {
       httpOnly: true,
-      secure: true, // true on HTTPS in production
-      sameSite: "none", // required for cross-site cookies
+      secure: true, // false on local host
+      sameSite: "none", // "lax" works on localhost
       maxAge: 24 * 60 * 60 * 1000, // optional: 1 day
     }).status(200).json(other);
 
