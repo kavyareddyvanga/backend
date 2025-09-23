@@ -11,8 +11,8 @@ router.get("/:id", getPost);
 
 // Protected routes (require login)
 router.post("/", verifyUser, addPost);          // only logged-in users can add
-router.put("/:id", verifyUser, updatePost);    // only owner can update
-router.delete("/:id", verifyUser, deletePost);// only owner can delete
+router.put("/:id",verifyUser, updatePost);    // only owner can update
+router.delete("/:id",verifyUser,  deletePost);// only owner can delete
 
 
 export default router;

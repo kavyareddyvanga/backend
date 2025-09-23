@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "dotenv.env" }); // Load environment variables
+dotenv.config({ path: "dotenv.env" });
 
 import express from "express";
 import { open } from "sqlite";
@@ -9,24 +9,29 @@ import cookieParser from "cookie-parser";
 
 import postRoutes from "./routes/posts.js";
 import authRoutes from "./routes/auth.js";
-import uploadRoutes from "./routes/upload.js"; // Cloudinary upload route
+import uploadRoutes from "./routes/upload.js";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Allow requests from frontend
+// ------------------- CORS -------------------
+const allowedOrigins = [
+  "http://localhost:3001", // If testing locally, change it to something like http://localhost:3000/ where your frontend will be running
+  "https://mitt-arv-blog-frontend.vercel.app", // deployed frontend
+];
+
 app.use(
   cors({
-    origin: "http://localhost:3001", // frontend dev URL (React)
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
-// ------------------- DATABASE SETUP -------------------
 
+// ------------------- DATABASE -------------------
 const dbPath = "blogs.db";
 let db = null;
 
@@ -40,7 +45,7 @@ const initializeDBAndServer = async () => {
 
     await db.run("PRAGMA foreign_keys = ON");
 
-    // Attach db to every request
+    // Attach DB to every request
     app.use((req, res, next) => {
       req.db = db;
       next();
@@ -49,12 +54,12 @@ const initializeDBAndServer = async () => {
     // ------------------- ROUTES -------------------
     app.use("/api/posts", postRoutes);
     app.use("/api/auth", authRoutes);
-    app.use("/api/upload", uploadRoutes); // Cloudinary uploads
-  
+    app.use("/api/upload", uploadRoutes);
 
     // ------------------- START SERVER -------------------
-    app.listen(3000, () => {
-      console.log("🚀 Server running at http://localhost:3000");
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error(`DB Error: ${err.message}`);
